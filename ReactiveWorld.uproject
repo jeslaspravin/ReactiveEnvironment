@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{B1239FA7-4895-3F6D-5160-88A60D3A03C4}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "ReactiveWorld",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

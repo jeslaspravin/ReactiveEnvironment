@@ -1,0 +1,175 @@
+#pragma once
+
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Generated/GeneratedUniformBuffers.ush" 
+
+// uniform buffers specifics
+#include "CommonViewUniformBuffer.ush"
+
+#include "InstancedStereo.ush"
+
+#include "Definitions.usf"
+
+
+void get4SampleUVs(float2 uv, uint textureSize, out int2 sampledPts[4])
+{
+    int2 samplePts[4];
+    
+    float2 textureCoord = uv * textureSize;
+    samplePts[0]= (int2)ceil(textureCoord.xy);
+    samplePts[1]= (int2)floor(textureCoord.xy);
+    samplePts[2]= int2(floor(textureCoord.x),ceil(textureCoord.y));
+    samplePts[3]= int2(ceil(textureCoord.x),floor(textureCoord.y));
+
+    sampledPts = samplePts;
+}
+
+void get4SampleTexels(int2 coord,int maxSize,out int2 sampledPts[4])
+{
+    int2 samplePts[4];
+
+    samplePts[0] = clamp(coord + int2(1, 0), int2(0,0), int2(maxSize,maxSize));
+    samplePts[1] = clamp(coord + int2(0, 1), int2(0, 0), int2(maxSize, maxSize));
+    samplePts[2] = clamp(coord + int2(-1, 0), int2(0, 0), int2(maxSize, maxSize));
+    samplePts[3] = clamp(coord + int2(0, -1), int2(0, 0), int2(maxSize, maxSize));
+
+    sampledPts= samplePts;
+}
+
+
+/**
+Uniform Buffers
+
+RCSConstants
+UNIFORM_MEMBER(int, resolution)
+UNIFORM_MEMBER(float, heightFieldTexelSize)
+UNIFORM_MEMBER(float, snowMudTexelSize)
+UNIFORM_MEMBER(float, reactiveSize)
+
+RCSDynamic
+UNIFORM_MEMBER(float, travelSpeed)
+UNIFORM_MEMBER(float, damping)
+UNIFORM_MEMBER(float, impactStrength)
+UNIFORM_MEMBER(float, waveStrength)
+UNIFORM_MEMBER(float, heightFieldScale)
+UNIFORM_MEMBER(float3, distanceOffset)
+UNIFORM_MEMBER(int, heightField2FrameRes)
+UNIFORM_MEMBER(int, heightField1FrameRes)
+UNIFORM_MEMBER(int, heightFieldOutRes)
+UNIFORM_MEMBER(int, offsetHeightField0FrameRes)
+UNIFORM_MEMBER(int, offsetHeightField1FrameRes)
+UNIFORM_MEMBER(int, heightFieldNormalRes)
+UNIFORM_MEMBER(int, waterLandSceneCaptureRes)
+UNIFORM_MEMBER(int, snowMudSceneCaptureRes)
+UNIFORM_MEMBER(int, impactCapturesRes)
+UNIFORM_MEMBER(int, snowResolvedTextureRes)
+UNIFORM_MEMBER(int, snowMudWriteOutRes)
+*/
+
+
+Texture2D<float> heightField2Frame;
+Texture2D<float> heightField1Frame;
+
+RWTexture2D<float> heightFieldOut; //OP
+
+RWTexture2D<float> offsetHeightField0Frame;
+RWTexture2D<float> offsetHeightField1Frame;
+
+RWTexture2D<float4> heightFieldNormal; //OP From HeightFieldOut
+
+Texture2D<float> waterLandSceneCapture;
+Texture2D<float> snowMudSceneCapture;
+Texture2D<float> impactCaptures;
+
+Texture2D<float> snowResolvedTexture;
+RWTexture2D<float> snowMudWriteOut; // OP
+
+
+[numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
+void ReactiveComputeMainCS(uint3 ThreadId : SV_DispatchThreadID)
+{
+    float2 uv = ThreadId.xy / float2(RCSConstants.resolution, RCSConstants.resolution);
+
+    //Assuming that all textures are square and it should be square,and all textures are of same size
+    // Res for resolution/size
+    // FLT for float values
+    // Coord for coordinate
+
+#if ENABLE_NON_UNIFORM_SIZE
+    const int2 heightField2FrameCoord=(int2) ((uv + RCSDynamic.distanceOffset.xy) * RCSDynamic.heightField2FrameRes);
+    const int2 heightField1FrameCoord=(int2) ((uv + RCSDynamic.distanceOffset.xy) * RCSDynamic.heightField1FrameRes);
+    const int2 heightFieldOutCoord=(int2) (uv * RCSDynamic.heightFieldOutRes);
+    const int2 heightFieldNormalCoord=(int2) (uv * RCSDynamic.heightFieldNormalRes);
+
+    const int2 offsetHeightField0Coord=(int2) (uv * RCSDynamic.offsetHeightField0FrameRes);
+    const int2 offsetHeightField1Coord=(int2) (uv * RCSDynamic.offsetHeightField1FrameRes);    
+    
+    const int2 waterLandSceneCaptureCoord=(int2) (uv * RCSDynamic.waterLandSceneCaptureRes);
+    // following uv translating is done to nullify offset in camera (see ReactiveEnvActor snow capture camera setup)
+    const int2 snowMudSceneCaptureCoord=(int2) (float2(1-uv.x,uv.y) * RCSDynamic.snowMudSceneCaptureRes);
+    const int2 snowResolvedTextureCoord=(int2) ((uv+RCSDynamic.distanceOffset.xy) * RCSDynamic.snowResolvedTextureRes);
+    const int2 snowMudWriteOutCoord=(int2) (uv * RCSDynamic.snowMudWriteOutRes);
+    const int2 impactCapturesCoord=(int2) (uv * RCSDynamic.impactCapturesRes);
+
+#else
+
+    const int2 heightField2FrameCoord = (int2) ((uv + RCSDynamic.distanceOffset.xy) * RCSDynamic.heightField2FrameRes);
+    const int2 heightField1FrameCoord = (int2) ((uv + RCSDynamic.distanceOffset.xy) * RCSDynamic.heightField1FrameRes);
+    const int2 heightFieldOutCoord = ThreadId.xy;
+    const int2 heightFieldNormalCoord = ThreadId.xy;
+
+    const int2 offsetHeightField0Coord = ThreadId.xy;
+    const int2 offsetHeightField1Coord = ThreadId.xy;
+    
+    const int2 waterLandSceneCaptureCoord = ThreadId.xy;
+    // following uv translating is done to nullify offset in camera (see ReactiveEnvActor snow capture camera setup)
+    const int2 snowMudSceneCaptureCoord = int2(RCSDynamic.snowMudSceneCaptureRes - ThreadId.x, ThreadId.y);
+    const int2 snowResolvedTextureCoord = (int2) ((uv + RCSDynamic.distanceOffset.xy) * RCSDynamic.snowResolvedTextureRes);
+    const int2 snowMudWriteOutCoord = ThreadId.xy;
+    const int2 impactCapturesCoord = ThreadId.xy;
+    
+#endif
+
+    const float impactCapturesFLT = impactCaptures.Load(int3(impactCapturesCoord,0));
+    const float snowResolvedTextureFLT = snowResolvedTexture.Load(int3(snowResolvedTextureCoord,0));
+    const float snowMudSceneCaptureFLT = snowMudSceneCapture.Load(int3(snowMudSceneCaptureCoord, 0));
+    const float heightField1FLT = heightField1Frame.Load(int3(heightField1FrameCoord, 0));
+    const float heightField2FLT = heightField2Frame.Load(int3(heightField2FrameCoord, 0));
+    const float waterLandSceneCaptureFLT = waterLandSceneCapture.Load(int3(waterLandSceneCaptureCoord, 0));
+
+    snowMudWriteOut[snowMudWriteOutCoord] = saturate(impactCapturesFLT * RCSDynamic.impactStrength + snowResolvedTextureFLT + snowMudSceneCaptureFLT);
+
+    int2 sampledPts[4];
+    get4SampleTexels(heightField1FrameCoord, RCSDynamic.heightField1FrameRes, sampledPts);
+
+    float frame1Samplex4 = 0;
+
+    UNROLL
+    for (int i = 0; i < 4;i++)
+    {
+        frame1Samplex4 += heightField1Frame.Load(int3(sampledPts[i], 0));
+    }
+
+    float heightField0FLT = 4 * heightField1FLT;
+    heightField0FLT += (RCSDynamic.travelSpeed * (frame1Samplex4 - heightField0FLT));
+    heightField0FLT = (heightField0FLT * 0.5f - heightField2FLT) * RCSDynamic.damping;
+    heightFieldOut[heightFieldOutCoord] = heightField0FLT + (waterLandSceneCaptureFLT * RCSDynamic.waveStrength + impactCapturesFLT * RCSDynamic.impactStrength)/3.0f;
+
+    GroupMemoryBarrierWithGroupSync();// Sync all Height simulation to begin copy
+
+    // To find normal
+    // Find (dN/dx,dN/dy)
+    
+    get4SampleTexels(heightFieldOutCoord, RCSDynamic.heightFieldOutRes, sampledPts);
+    float2 dN = float2(heightFieldOut.Load(int3(sampledPts[0], 0)) - heightFieldOut.Load(int3(sampledPts[2], 0)),
+                heightFieldOut.Load(int3(sampledPts[1], 0)) - heightFieldOut.Load(int3(sampledPts[3], 0)));
+    dN *= RCSDynamic.heightFieldScale;
+    float3 d1 = float3(RCSConstants.heightFieldTexelSize * 2, 0.0f, dN.x);    
+    float3 d2 = float3(0.0f, RCSConstants.heightFieldTexelSize * 2, dN.y);
+
+    heightFieldNormal[heightFieldNormalCoord] = float4(normalize(cross(d1, d2)),1);
+    
+    // Copying offset values for next frame usage
+    offsetHeightField0Frame[offsetHeightField0Coord] = heightFieldOut.Load(int3(heightFieldOutCoord, 0));
+    offsetHeightField1Frame[offsetHeightField1Coord] = heightField1Frame.Load(int3(heightField1FrameCoord, 0));
+}

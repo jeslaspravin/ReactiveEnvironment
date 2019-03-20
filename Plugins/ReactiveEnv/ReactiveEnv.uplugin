@@ -1,0 +1,28 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "ReactiveEnv",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Jeslas Pravin",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "ReactiveEnv",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
+		},
+		{
+			"Name": "ReactiveEnvEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
