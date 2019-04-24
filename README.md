@@ -5,3 +5,5 @@ There is still a lot of noise in calculated Normals.
 There is lots of room for improvements.
 
 This is just a hobby project I created inspired by Unreal's Render Material to Texture demo and Marvel Master's https://youtu.be/pX82z77TZc4 tried to replicate without that many draw calls and added snow,Mud,Grass interactions too.
+
+Used engine version UE 4.21
