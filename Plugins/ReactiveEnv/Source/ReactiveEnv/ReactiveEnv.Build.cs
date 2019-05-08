@@ -27,7 +27,6 @@ public class ReactiveEnv : ModuleRules
 			{
 				"Core",
                 "Engine",
-                "ShaderCore",
                 "RenderCore"
 				// ... add other public dependencies that you statically link with here ...
 			}

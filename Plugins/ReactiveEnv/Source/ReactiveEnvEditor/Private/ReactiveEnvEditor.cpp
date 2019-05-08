@@ -50,9 +50,9 @@ void FReactiveEnvEditor::ShutdownModule()
 void FReactiveEnvEditor::onDumpRTs()
 {
 
-	if (GEditor && GEditor->AllViewportClients.Num()>0)
+	if (GEditor && GEditor->GetAllViewportClients().Num()>0)
 	{
-		for(FEditorViewportClient* viewportClient : GEditor->AllViewportClients)
+		for(FEditorViewportClient* viewportClient : GEditor->GetAllViewportClients())
 		{
 			UWorld* world= viewportClient->GetWorld();
 			if (world && AReactiveEnvActor::getInstance() && world->IsEditorWorld())

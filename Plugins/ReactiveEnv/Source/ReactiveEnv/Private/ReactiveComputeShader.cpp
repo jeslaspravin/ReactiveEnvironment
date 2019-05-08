@@ -1,7 +1,7 @@
 #include "ReactiveComputeShader.h"
 
-IMPLEMENT_UNIFORM_BUFFER_STRUCT(FReactiveConstantParameters, TEXT("RCSConstants"))
-IMPLEMENT_UNIFORM_BUFFER_STRUCT(FReactiveDynamicParameters, TEXT("RCSDynamic"))
+IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FReactiveConstantParameters, "RCSConstants");
+IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FReactiveDynamicParameters, "RCSDynamic");
 
 // TODO Fill proper compute shader value here
 IMPLEMENT_SHADER_TYPE(, FReactiveComputeShader, TEXT("/ReactiveEnv/Private/ReactiveComputeShader.usf"), TEXT("ReactiveComputeMainCS"), SF_Compute);

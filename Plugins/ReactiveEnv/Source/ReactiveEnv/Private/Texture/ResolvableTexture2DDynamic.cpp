@@ -12,6 +12,7 @@ UResolvableTexture2DDynamic::UResolvableTexture2DDynamic(const FObjectInitialize
 	NumMips = 1;
 }
 
+#if WITH_EDITOR
 void UResolvableTexture2DDynamic::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	EPixelFormat pixelFormat = Format = getPixelFormatFromResolveTextureFormat(textureFormat);
@@ -51,6 +52,7 @@ void UResolvableTexture2DDynamic::PostEditChangeProperty(FPropertyChangedEvent& 
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif
 
 void UResolvableTexture2DDynamic::PostLoad()
 {

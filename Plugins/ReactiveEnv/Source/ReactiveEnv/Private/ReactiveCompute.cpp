@@ -145,10 +145,12 @@ void FReactiveCompute::computeReactive()
 	if (heightShiftIndex == 0 && heightFieldTextureIndex == 0)
 		executionCounter = 0;
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(FReactiveComputeRun, FReactiveCompute*, ReactiveCompute, this,
-		{
-			ReactiveCompute->computeInternal();
-		});
+	ENQUEUE_RENDER_COMMAND(FReactiveComputeRun)
+	(
+		[this](FRHICommandListImmediate& RHICmdList) {
+			this->computeInternal();
+		}
+	);
 }
 
 
